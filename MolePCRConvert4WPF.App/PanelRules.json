@@ -1,0 +1,537 @@
+{
+  "Panels": [
+    {
+      "PanelType": "Panel 1",
+      "Description": "Panel 1: 每2竖列组成一个样本单元，G/H行部分孔位没有试剂，属于无效孔",
+      "WellsPerSample": 2,
+      "InternalControlRules": [
+        {
+          "ReactionSystem": "体系1",
+          "Channel": "CY5",
+          "ValidThreshold": 31,
+          "InvalidHandling": "整板样本标记为反应无效，停止后续靶标判定"
+        },
+        {
+          "ReactionSystem": "体系2",
+          "Channel": "CY5",
+          "ValidThreshold": 31,
+          "InvalidHandling": "整板样本标记为反应无效，停止后续靶标判定"
+        }
+      ],
+      "TargetRules": [
+        {
+          "Pathogen": "甲型流感病毒 H1N1 2009",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 1,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            },
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "肺炎支原体",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 1,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            },
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "肺炎链球菌",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "乙型流感病毒",
+          "ReactionSystem": "体系4",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        }
+      ]
+    },
+    {
+      "PanelType": "Panel 1.1",
+      "Description": "Meta PCR Panel 1.1: 每1竖列组成一个样本单元，样本位于相邻两个孔位",
+      "WellsPerSample": 1,
+      "InternalControlRules": [
+        {
+          "ReactionSystem": "体系1",
+          "Channel": "CY5",
+          "ValidThreshold": 31,
+          "InvalidHandling": "整板样本标记为反应无效，停止后续靶标判定"
+        },
+        {
+          "ReactionSystem": "体系2",
+          "Channel": "CY5",
+          "ValidThreshold": 31,
+          "InvalidHandling": "整板样本标记为反应无效，停止后续靶标判定"
+        }
+      ],
+      "TargetRules": [
+        {
+          "Pathogen": "肺炎支原体",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "CY5",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "甲型流感病毒 H1N1 2009",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人腺病毒",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "鼻病毒",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人偏肺病毒",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人间质肺炎病毒",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人冠状病毒 (NL63, 229E, HKU1和OC43型)",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "肺炎链球菌",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人鼻病毒/肠病毒",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "CY5",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "呼吸道合胞病毒",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "可疑新冠病毒 H1N1 2009",
+          "ReactionSystem": "体系4",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "内标",
+          "ReactionSystem": "体系4",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "甲型副流感病毒",
+          "ReactionSystem": "体系5",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "博卡病毒",
+          "ReactionSystem": "体系5",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "嗜肺军团菌",
+          "ReactionSystem": "体系5",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "CY5",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "戊型副流感病毒",
+          "ReactionSystem": "体系6",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "肺炎克雷伯菌",
+          "ReactionSystem": "体系6",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "丙型副流感病毒",
+          "ReactionSystem": "体系7",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        }
+      ]
+    },
+    {
+      "PanelType": "Panel 6",
+      "Description": "Meta PCR Panel 6: 每1竖列组成一个样本单元，样本位于相邻的孔位",
+      "WellsPerSample": 1,
+      "InternalControlRules": [
+        {
+          "ReactionSystem": "体系3",
+          "Channel": "VIC",
+          "ValidThreshold": 31,
+          "InvalidHandling": "整板样本标记为反应无效，停止后续靶标判定"
+        },
+        {
+          "ReactionSystem": "体系3",
+          "Channel": "HEX",
+          "ValidThreshold": 31,
+          "InvalidHandling": "整板样本标记为反应无效，停止后续靶标判定"
+        }
+      ],
+      "TargetRules": [
+        {
+          "Pathogen": "腺病毒",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "猴出血热病毒",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人痘病毒",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "猴痘病毒",
+          "ReactionSystem": "体系1",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "CY5",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "口蹄疫病毒",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "光滑型猩猩病毒",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "牛痘病毒",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "牛痘病毒相关病毒",
+          "ReactionSystem": "体系2",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "CY5",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "人源内标",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 31
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "鼠痘病毒",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "ROX",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "猕猴痘样病毒非洲株",
+          "ReactionSystem": "体系3",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "全基因组单检测（PDR检测器）",
+          "ReactionSystem": "体系4",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "FAM",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        },
+        {
+          "Pathogen": "内标",
+          "ReactionSystem": "体系4",
+          "JudgmentType": 0,
+          "Channels": [
+            {
+              "Channel": "VIC",
+              "Threshold": 36
+            }
+          ],
+          "RequiresSCurve": true,
+          "ConcentrationCalculationMethod": "未定义"
+        }
+      ]
+    },
+    {
+      "PanelType": "Panel 2",
+      "Description": "Panel 2: 默认配置，每个样本占用1个孔位",
+      "WellsPerSample": 1,
+      "InternalControlRules": [],
+      "TargetRules": []
+    }
+  ]
+} 

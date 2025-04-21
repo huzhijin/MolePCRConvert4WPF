@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Explicitly remove the problematic file if the build system still sees it -->
+  <ItemGroup>
+    <Compile Remove="Services\NavigationService.cs" /> 
+    <None Include="Services\NavigationService.cs" Exclude="**\*" /> <!-- Also ensure it's not treated as 'None' -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.7" />
+    <PackageReference Include="EPPlus" Version="7.1.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="ncalc" Version="1.3.8" />
+    <PackageReference Include="NPOI" Version="2.7.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MolePCRConvert4WPF.Core\MolePCRConvert4WPF.Core.csproj" />
+  </ItemGroup>
+
+</Project> 
