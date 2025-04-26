@@ -270,6 +270,7 @@ namespace MolePCRConvert4WPF.App
                 new PanelRuleRepository(_panelRulesFilePath));
             services.AddTransient<ISampleNamingService, SampleNamingService>();
             services.AddTransient<IReportService, ExcelReportGenerator>();
+            services.AddTransient<IReportTemplateDesignerService, ReoGridReportTemplateDesignerService>();
             services.AddTransient<IFileHandler, ExcelFileHandler>();
 
             // 注册视图模型
@@ -278,6 +279,8 @@ namespace MolePCRConvert4WPF.App
             services.AddTransient<SampleAnalysisViewModel>();
             services.AddTransient<ExcelAnalysisMethodConfigViewModel>();
             services.AddTransient<PCRResultAnalysisViewModel>();
+            services.AddTransient<ReportTemplateConfigViewModel>();
+            services.AddTransient<ReportTemplateDesignerViewModel>();
             // 注册 ShellViewModel (假设它存在且需要被注入)
             // 如果 ShellViewModel 不直接通过 DI 创建，则不需要下面这行
             // services.AddTransient<ShellViewModel>(); 
@@ -293,7 +296,19 @@ namespace MolePCRConvert4WPF.App
             // 注册 PCRResultAnalysisViewModel 依赖的服务
             System.Diagnostics.Debug.WriteLine("ConfigureServices: 注册分析方法配置和PCR分析服务");
             services.AddTransient<IAnalysisMethodConfigService, NpoiAnalysisMethodConfigService>(); 
-            services.AddTransient<IPCRAnalysisService, PCRAnalysisService>(); 
+
+            // 先注册具体的PCRAnalysisService，确保工厂可以获取具体类型实例
+            services.AddSingleton<PCRAnalysisService>();
+
+            // 注册SLAN专用的PCR分析服务
+            services.AddSingleton<SLANPCRAnalysisService>();
+
+            // 注册PCR分析服务工厂
+            services.AddSingleton<IPCRAnalysisServiceFactory, PCRAnalysisServiceFactory>();
+
+            // 注册PCR分析服务接口
+            services.AddSingleton<IPCRAnalysisService>(provider => 
+                provider.GetRequiredService<IPCRAnalysisServiceFactory>().GetAnalysisService(InstrumentType.Unknown));
 
             System.Diagnostics.Debug.WriteLine("ConfigureServices: 构建服务提供程序");
             ServiceProvider = services.BuildServiceProvider();
@@ -370,5 +385,44 @@ namespace MolePCRConvert4WPF.App
         }
         
         // 分析PCR结果方法可以在这里添加
+    }
+
+    /// <summary>
+    /// PCR分析服务工厂接口
+    /// </summary>
+    public interface IPCRAnalysisServiceFactory
+    {
+        /// <summary>
+        /// 根据仪器类型获取对应的PCR分析服务
+        /// </summary>
+        IPCRAnalysisService GetAnalysisService(InstrumentType instrumentType);
+    }
+    
+    /// <summary>
+    /// PCR分析服务工厂实现
+    /// </summary>
+    public class PCRAnalysisServiceFactory : IPCRAnalysisServiceFactory
+    {
+        private readonly PCRAnalysisService _defaultService;
+        private readonly SLANPCRAnalysisService _slanService;
+        
+        public PCRAnalysisServiceFactory(PCRAnalysisService defaultService, SLANPCRAnalysisService slanService)
+        {
+            _defaultService = defaultService;
+            _slanService = slanService;
+        }
+        
+        public IPCRAnalysisService GetAnalysisService(InstrumentType instrumentType)
+        {
+            // 根据仪器类型返回对应的分析服务实现
+            switch (instrumentType)
+            {
+                case InstrumentType.SLAN96P:
+                case InstrumentType.SLAN96S:
+                    return _slanService;
+                default:
+                    return _defaultService;
+            }
+        }
     }
 } 

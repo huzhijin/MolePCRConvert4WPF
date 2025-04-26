@@ -33,6 +33,9 @@ namespace MolePCRConvert4WPF.App.ViewModels
         private string? _selectedAnalysisMethod; // Added
         private readonly INavigationService _navigationService;
         
+        // 配置文件夹路径
+        private const string CONFIG_FOLDER = "Config";
+        
         public string SelectedFilePath
         {
             get => _selectedFilePath;
@@ -119,8 +122,8 @@ namespace MolePCRConvert4WPF.App.ViewModels
             // Initialize AvailableAnalysisMethods
             _availableAnalysisMethods = new ObservableCollection<string>(); // Initialize empty
             
-            // 优先从用户设置中加载分析方法文件夹路径，并读取该文件夹中的方法文件
-            LoadAnalysisMethodsFromSettings();
+            // 从Config文件夹加载分析方法文件
+            LoadAnalysisMethodsFromConfigFolder();
             
             BrowseCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(BrowseFile, () => !IsLoading);
             LoadDataCommand = new AsyncRelayCommand(LoadDataAsync, CanLoadData);
@@ -131,54 +134,77 @@ namespace MolePCRConvert4WPF.App.ViewModels
         }
 
         /// <summary>
-        /// 从用户设置加载分析方法文件夹路径，并读取该文件夹中的分析方法文件
+        /// 获取Config文件夹路径
         /// </summary>
-        private void LoadAnalysisMethodsFromSettings()
+        private string GetConfigFolderPath()
         {
-            _logger?.LogInformation("尝试从用户设置加载分析方法文件夹路径");
-            string? savedFolderPath = _userSettingsService.LoadSetting("AnalysisMethodFolderPath");
+            // 获取应用程序所在目录
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            // 构建Config文件夹的完整路径
+            string configPath = Path.Combine(baseDir, CONFIG_FOLDER);
+            return configPath;
+        }
+
+        /// <summary>
+        /// 从Config文件夹加载分析方法文件
+        /// </summary>
+        private void LoadAnalysisMethodsFromConfigFolder()
+        {
+            string configPath = GetConfigFolderPath();
+            _logger?.LogInformation($"从Config文件夹加载分析方法文件: {configPath}");
             
-            if (!string.IsNullOrEmpty(savedFolderPath) && Directory.Exists(savedFolderPath))
+            // 确保Config文件夹存在
+            if (!Directory.Exists(configPath))
             {
-                _logger?.LogInformation($"从用户设置加载分析方法文件夹路径: {savedFolderPath}");
                 try
                 {
-                    // 从文件夹加载方法文件
-                    var files = Directory.GetFiles(savedFolderPath, "*.xlsx")
-                                         .Select(f => new FileDisplayInfo { DisplayName = Path.GetFileName(f), FullPath = f })
-                                         .OrderBy(f => f.DisplayName)
-                                         .ToList();
-                    
-                    // 更新AppStateService中的方法文件列表
-                    if (_appStateService.AnalysisMethodFiles == null)
-                    {
-                        _appStateService.AnalysisMethodFiles = new ObservableCollection<FileDisplayInfo>();
-                    }
-                    else
-                    {
-                        _appStateService.AnalysisMethodFiles.Clear();
-                    }
-                    
-                    foreach (var file in files)
-                    {
-                        _appStateService.AnalysisMethodFiles.Add(file);
-                    }
-                    
-                    _logger?.LogInformation($"成功从文件夹加载了 {files.Count} 个分析方法文件");
-                    
-                    // 更新可用方法下拉列表
-                    UpdateAvailableMethods();
+                    Directory.CreateDirectory(configPath);
+                    _logger?.LogInformation($"创建Config文件夹: {configPath}");
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, $"从文件夹 {savedFolderPath} 加载分析方法文件时出错");
+                    _logger?.LogError(ex, $"创建Config文件夹失败: {configPath}");
+                    MessageBox.Show($"无法创建配置文件夹: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
                 }
             }
-            else
+            
+            try
             {
-                _logger?.LogInformation("未找到有效的分析方法文件夹路径设置，将使用AppStateService中的方法列表");
-                // 使用AppStateService中的方法列表
+                // 从文件夹加载方法文件
+                var files = Directory.GetFiles(configPath, "*.xlsx")
+                                     .Where(f => !Path.GetFileName(f).StartsWith("temp_") && !Path.GetFileName(f).StartsWith("~$"))
+                                     .Select(f => new FileDisplayInfo { DisplayName = Path.GetFileName(f), FullPath = f })
+                                     .OrderBy(f => f.DisplayName)
+                                     .ToList();
+                
+                // 更新AppStateService中的方法文件列表
+                if (_appStateService.AnalysisMethodFiles == null)
+                {
+                    _appStateService.AnalysisMethodFiles = new ObservableCollection<FileDisplayInfo>();
+                }
+                else
+                {
+                    _appStateService.AnalysisMethodFiles.Clear();
+                }
+                
+                foreach (var file in files)
+                {
+                    _appStateService.AnalysisMethodFiles.Add(file);
+                }
+                
+                _logger?.LogInformation($"成功从Config文件夹加载了 {files.Count} 个分析方法文件");
+                
+                // 保存Config文件夹路径到用户设置
+                _userSettingsService.SaveSetting("AnalysisMethodFolderPath", configPath);
+                
+                // 更新可用方法下拉列表
                 UpdateAvailableMethods();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"从Config文件夹 {configPath} 加载分析方法文件时出错");
+                MessageBox.Show($"加载分析方法文件时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -215,8 +241,8 @@ namespace MolePCRConvert4WPF.App.ViewModels
         // for now, it's updated only on construction)
         public void OnNavigatedTo() // Placeholder for activation logic
         {
-             // 每次导航到该视图时都尝试从用户设置加载分析方法文件
-             LoadAnalysisMethodsFromSettings();
+             // 每次导航到该视图时都尝试从Config文件夹加载分析方法文件
+             LoadAnalysisMethodsFromConfigFolder();
         }
 
         private void BrowseFile()

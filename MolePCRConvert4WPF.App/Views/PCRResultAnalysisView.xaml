@@ -7,6 +7,7 @@
              xmlns:viewmodels="clr-namespace:MolePCRConvert4WPF.App.ViewModels"
              xmlns:extensions="clr-namespace:MolePCRConvert4WPF.App.Extensions"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
              d:DataContext="{d:DesignInstance Type=viewmodels:PCRResultAnalysisViewModel}"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000">
@@ -55,8 +56,24 @@
                 <DataGridTextColumn Header="孔位" Binding="{Binding WellPosition}" Width="80"/>
                 <DataGridTextColumn Header="荧光通道" Binding="{Binding Channel}" Width="100"/>
                 <DataGridTextColumn Header="靶标名称" Binding="{Binding TargetName}" Width="150"/>
-                <DataGridTextColumn Header="CT值" Binding="{Binding CtValue}" Width="80"/>
-                <DataGridTextColumn Header="浓度" Binding="{Binding Concentration}" Width="100"/>
+                <DataGridTextColumn Header="CT值" Width="80">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="CtValue" StringFormat="{}{0:F2}">
+                            <Binding.TargetNullValue>
+                                <x:Static Member="system:String.Empty"/>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="浓度" Width="100">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Concentration" StringFormat="{}{0:E2}">
+                            <Binding.TargetNullValue>
+                                <x:Static Member="system:String.Empty"/>
+                            </Binding.TargetNullValue>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
                 <DataGridTemplateColumn Header="检测结果" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

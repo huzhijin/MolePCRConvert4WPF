@@ -149,9 +149,9 @@
                      <DataGridTextColumn Header="靶标名称" Binding="{Binding TargetName}" Width="130" ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}" CellStyle="{StaticResource MaterialDesignDataGridCell}"/>
                    
                     <!-- CT Value Column -->
-                    <DataGridTextColumn Header="CT值" Width="70" ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}" CellStyle="{StaticResource MaterialDesignDataGridCell}">
+                    <DataGridTextColumn Header="CT值" Width="80" ElementStyle="{StaticResource MaterialDesignDataGridTextColumnStyle}" CellStyle="{StaticResource MaterialDesignDataGridCell}">
                         <DataGridTextColumn.Binding>
-                            <Binding Path="CtValue" StringFormat="{StaticResource CtValueFormat}"> <!-- Define CtValueFormat in Resources if needed -->
+                            <Binding Path="CtValueDisplay">
                                 <Binding.TargetNullValue>
                                     <system:String>-</system:String>
                                 </Binding.TargetNullValue>

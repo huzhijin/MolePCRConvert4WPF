@@ -34,7 +34,7 @@
         </Style>
 
         <!-- DataTemplate for each well -->
-        <DataTemplate x:Key="WellDataTemplate" DataType="{x:Type models:WellInfo}">
+        <DataTemplate x:Key="WellDataTemplate" DataType="models:WellInfo">
              <Border BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" 
                      Width="50" Height="50" 
                      Margin="1"

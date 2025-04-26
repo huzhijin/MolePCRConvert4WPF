@@ -35,6 +35,8 @@
             <!-- Converters -->
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:BoolToStringConverter x:Key="BoolToStringConverter"/>
+            <converters:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter"/>
             
             <!-- Custom Format Strings -->
             <system:String x:Key="CtValueFormat">F1</system:String> <!-- Format for 1 decimal place -->

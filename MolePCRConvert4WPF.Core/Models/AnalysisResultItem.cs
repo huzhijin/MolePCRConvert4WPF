@@ -28,6 +28,9 @@ namespace MolePCRConvert4WPF.Core.Models
         [ObservableProperty]
         private double? _ctValue;
 
+        [ObservableProperty]
+        private string? _ctValueSpecialMark; // e.g., "-", "Undetermined"
+
         // --- Calculated Results ---
         [ObservableProperty]
         private double? _concentration;

@@ -55,13 +55,11 @@
                         Margin="0,0,16,0"/>
                  
                  <!-- Add Export Button if needed -->
-                 <!-- 
                  <Button Content="导出结果" 
                         Style="{StaticResource MaterialDesignOutlinedButton}"
                         Command="{Binding ExportCommand}"
                         IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}" 
-                        Margin="0,0,16,0"/> 
-                 -->
+                        Margin="0,0,16,0"/>
 
                 <TextBlock Text="分析方法:" VerticalAlignment="Center" FontWeight="Medium" Margin="10,0,5,0" Opacity="0.7"/>
                 <TextBlock Text="{Binding CurrentAnalysisMethodName, FallbackValue='加载中...'}" VerticalAlignment="Center" ToolTip="当前分析所使用的配置方法文件"/>

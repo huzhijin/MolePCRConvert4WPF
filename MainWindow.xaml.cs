@@ -20,5 +20,19 @@ namespace MolePCRConvert4WPF
         {
             InitializeComponent();
         }
+
+        private void MenuTemplateFixTool_Click(object sender, RoutedEventArgs e)
+        {
+            // 打开模板修复工具窗口
+            var templateFixWindow = new TemplateFixWindow();
+            templateFixWindow.Owner = this;
+            templateFixWindow.ShowDialog();
+        }
+
+        private void MenuExit_Click(object sender, RoutedEventArgs e)
+        {
+            // 退出应用程序
+            Close();
+        }
     }
 }

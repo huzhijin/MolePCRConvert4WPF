@@ -127,6 +127,11 @@ namespace MolePCRConvert4WPF.Core.Models
         public double? CtValue { get; set; }
         
         /// <summary>
+        /// CT值特殊标记，存储"-"、"Undetermined"等特殊值
+        /// </summary>
+        public string? CtValueSpecialMark { get; set; }
+        
+        /// <summary>
         /// 荧光值
         /// </summary>
         public double? FluorescenceValue { get; set; }

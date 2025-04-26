@@ -63,6 +63,52 @@ namespace MolePCRConvert4WPF.App
                 if (_navigationService is MolePCRConvert4WPF.App.Services.NavigationService concreteNavService)
                 {
                     concreteNavService.RegisterContentControl(MainContent); // Pass the ContentControl - Changed from Initialize
+                    
+                    // 注册各个ViewModel的导航操作
+                    concreteNavService.RegisterNavigationAction<DataInputViewModel>(() => {
+                        // 使用MainContent的依赖注入创建视图
+                        var vm = concreteNavService.GetViewModel<DataInputViewModel>();
+                        var view = new Views.DataInput.DataInputView { DataContext = vm };
+                        MainContent.Content = view;
+                        Debug.WriteLine("导航到DataInputView完成");
+                    });
+                    
+                    concreteNavService.RegisterNavigationAction<SampleAnalysisViewModel>(() => {
+                        var vm = concreteNavService.GetViewModel<SampleAnalysisViewModel>();
+                        var view = new Views.SampleAnalysis.SampleAnalysisView { DataContext = vm };
+                        MainContent.Content = view;
+                        Debug.WriteLine("导航到SampleAnalysisView完成");
+                    });
+                    
+                    concreteNavService.RegisterNavigationAction<ExcelAnalysisMethodConfigViewModel>(() => {
+                        var vm = concreteNavService.GetViewModel<ExcelAnalysisMethodConfigViewModel>();
+                        var view = new Views.AnalysisMethodConfig.ExcelAnalysisMethodConfigView { DataContext = vm };
+                        MainContent.Content = view;
+                        Debug.WriteLine("导航到ExcelAnalysisMethodConfigView完成");
+                    });
+                    
+                    concreteNavService.RegisterNavigationAction<PCRResultAnalysisViewModel>(() => {
+                        var vm = concreteNavService.GetViewModel<PCRResultAnalysisViewModel>();
+                        var view = new Views.ResultAnalysis.PCRResultAnalysisView { DataContext = vm };
+                        MainContent.Content = view;
+                        Debug.WriteLine("导航到PCRResultAnalysisView完成");
+                    });
+                    
+                    concreteNavService.RegisterNavigationAction<ReportTemplateConfigViewModel>(() => {
+                        // 报告模板配置视图
+                        var vm = concreteNavService.GetViewModel<ReportTemplateConfigViewModel>();
+                        var view = new Views.ReportTemplateConfigView { DataContext = vm };
+                        MainContent.Content = view;
+                        Debug.WriteLine("导航到ReportTemplateConfigView完成");
+                    });
+                    
+                    concreteNavService.RegisterNavigationAction<ReportTemplateDesignerViewModel>(() => {
+                        // 报告模板设计器视图
+                        var vm = concreteNavService.GetViewModel<ReportTemplateDesignerViewModel>();
+                        var view = new Views.ReportTemplateDesignerView { DataContext = vm };
+                        MainContent.Content = view;
+                        Debug.WriteLine("导航到ReportTemplateDesignerView完成");
+                    });
                 }
                 else
                 {
@@ -180,6 +226,12 @@ namespace MolePCRConvert4WPF.App
                              break;
                          case "PCRResultAnalysis":
                              _navigationService.NavigateTo<PCRResultAnalysisViewModel>();
+                             break;
+                         case "ReportTemplateConfig":
+                             _navigationService.NavigateTo<ReportTemplateConfigViewModel>();
+                             break;
+                         case "ReportTemplateDesigner":
+                             _navigationService.NavigateTo<ReportTemplateDesignerViewModel>();
                              break;
                          default:
                              Debug.WriteLine($"Unknown navigation tag: {tag}. Displaying welcome view.");

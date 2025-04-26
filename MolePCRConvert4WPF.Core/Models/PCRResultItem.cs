@@ -44,6 +44,12 @@ namespace MolePCRConvert4WPF.Core.Models
         private double? _ctValue;
         
         /// <summary>
+        /// CT值显示文本 (包括"-"等特殊值)
+        /// </summary>
+        [ObservableProperty]
+        private string _ctValueDisplay = "-";
+        
+        /// <summary>
         /// 浓度值
         /// </summary>
         [ObservableProperty]

@@ -78,6 +78,12 @@
                                     <TextBlock Text="PCR结果分析" Margin="16,0,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
                             </ListBoxItem>
+                            <ListBoxItem Tag="ReportTemplateConfig">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FileDocument" Width="24" Height="24" VerticalAlignment="Center" />
+                                    <TextBlock Text="报告模板配置" Margin="16,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ListBoxItem>
                         </ListBox>
                     </DockPanel>
                 </materialDesign:DrawerHost.LeftDrawerContent>

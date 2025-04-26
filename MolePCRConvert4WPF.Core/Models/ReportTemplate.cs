@@ -76,6 +76,11 @@ namespace MolePCRConvert4WPF.Core.Models
         public bool IsHtmlTemplate { get; set; } = false;
         
         /// <summary>
+        /// 是否为ReoGrid模板
+        /// </summary>
+        public bool IsReoGridTemplate { get; set; } = false;
+        
+        /// <summary>
         /// 是否为系统预设模板
         /// </summary>
         public bool IsSystem { get; set; } = false;
