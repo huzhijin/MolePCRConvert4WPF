@@ -3,6 +3,11 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using unvell.ReoGrid;
+using unvell.ReoGrid.Events;
+using unvell.ReoGrid.Graphics;
+using MolePCRConvert4WPF.App.Utils;
+using MolePCRConvert4WPF.Core.Models;
 
 namespace MolePCRConvert4WPF.App.Views
 {
@@ -48,13 +53,22 @@ namespace MolePCRConvert4WPF.App.Views
                 }
             };
             
+            // 监听变量插入请求事件
+            if (_viewModel != null)
+            {
+                _viewModel.VariableInsertRequested += (s, variable) =>
+                {
+                    InsertVariable(variable);
+                };
+            }
+            
             // 添加快捷键
             PreviewKeyDown += (s, ke) =>
             {
                 // Ctrl+S 保存
                 if (ke.Key == Key.S && Keyboard.Modifiers == ModifierKeys.Control)
                 {
-                    if (_viewModel.SaveCommand.CanExecute(null))
+                    if (_viewModel?.SaveCommand.CanExecute(null) == true)
                     {
                         _viewModel.SaveCommand.Execute(null);
                         ke.Handled = true;
@@ -64,7 +78,7 @@ namespace MolePCRConvert4WPF.App.Views
                 // Ctrl+Shift+S 另存为
                 if (ke.Key == Key.S && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
                 {
-                    if (_viewModel.SaveAsCommand.CanExecute(null))
+                    if (_viewModel?.SaveAsCommand.CanExecute(null) == true)
                     {
                         _viewModel.SaveAsCommand.Execute(null);
                         ke.Handled = true;
@@ -74,13 +88,44 @@ namespace MolePCRConvert4WPF.App.Views
                 // Ctrl+N 新建
                 if (ke.Key == Key.N && Keyboard.Modifiers == ModifierKeys.Control)
                 {
-                    if (_viewModel.NewTemplateCommand.CanExecute(null))
+                    if (_viewModel?.NewTemplateCommand.CanExecute(null) == true)
                     {
                         _viewModel.NewTemplateCommand.Execute(null);
                         ke.Handled = true;
                     }
                 }
             };
+        }
+        
+        /// <summary>
+        /// 插入变量到当前选中的单元格
+        /// </summary>
+        /// <param name="variable">要插入的变量</param>
+        private void InsertVariable(TemplateVariable variable)
+        {
+            if (variable == null) return;
+            
+            var worksheet = ReoGridControl.CurrentWorksheet;
+            var selection = worksheet.SelectionRange;
+            
+            if (selection == null || selection.IsEmpty)
+            {
+                MessageBox.Show("请先选择一个单元格", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            
+            // 插入变量
+            worksheet[selection.Row, selection.Col] = variable.Name;
+            
+            // 设置变量的样式（蓝色文本）
+            worksheet.SetRangeStyles(selection, new WorksheetRangeStyle
+            {
+                Flag = PlainStyleFlag.TextColor,
+                TextColor = SolidColor.Blue
+            });
+            
+            // 通知ViewModel模板已修改
+            _viewModel?.NotifyDataModified();
         }
         
         /// <summary>

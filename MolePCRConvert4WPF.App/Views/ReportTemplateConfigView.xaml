@@ -120,6 +120,31 @@
                           Margin="0"
                           materialDesign:DataGridAssist.CellPadding="13 8 13 8" 
                           materialDesign:DataGridAssist.ColumnHeaderPadding="13 8 13 8">
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="编辑模板" Command="{Binding DesignTemplateCommand}">
+                                <MenuItem.Icon>
+                                    <materialDesign:PackIcon Kind="TableEdit" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="重命名" Command="{Binding RenameTemplateCommand}">
+                                <MenuItem.Icon>
+                                    <materialDesign:PackIcon Kind="Rename" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="删除" Command="{Binding DeleteTemplateCommand}">
+                                <MenuItem.Icon>
+                                    <materialDesign:PackIcon Kind="Delete" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem Header="在资源管理器中显示" Command="{Binding ShowInExplorerCommand}">
+                                <MenuItem.Icon>
+                                    <materialDesign:PackIcon Kind="FolderOpen" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                     <DataGrid.Columns>
                         <materialDesign:DataGridTextColumn Header="模板名称" Binding="{Binding Name}" Width="2*" />
                         <materialDesign:DataGridTextColumn Header="文件路径" Binding="{Binding FilePath}" Width="3*" />

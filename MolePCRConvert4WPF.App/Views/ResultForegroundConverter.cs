@@ -1,5 +1,6 @@
 using MolePCRConvert4WPF.App.Extensions;
-using MolePCRConvert4WPF.Core.Models;
+// using MolePCRConvert4WPF.Core.Models; // Removed or commented out if Core.PCRResultItem is not needed here
+using MolePCRConvert4WPF.App.ViewModels; // Add using for ViewModels namespace
 using System;
 using System.Globalization;
 using System.Windows.Data;
@@ -17,8 +18,10 @@ namespace MolePCRConvert4WPF.App.Views
         /// </summary>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is PCRResultItem item)
+            // Explicitly use the ViewModel's PCRResultItem
+            if (value is ViewModels.PCRResultItem item)
             {
+                // Assuming PCRResultItemExtensions is updated or also uses ViewModels.PCRResultItem
                 return PCRResultItemExtensions.GetResultForeground(item);
             }
             

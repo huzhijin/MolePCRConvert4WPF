@@ -233,6 +233,27 @@ namespace MolePCRConvert4WPF.App
                          case "ReportTemplateDesigner":
                              _navigationService.NavigateTo<ReportTemplateDesignerViewModel>();
                              break;
+                         case "ReportCustomTemplate":
+                             try
+                             {
+                                 // 导航到自定义报告设计视图
+                                 // 打开新窗口而不是在主内容区域显示
+                                 Debug.WriteLine("正在打开自定义报告设计视图");
+                                 var designerWindow = new MolePCRConvert4WPF.Views.ReportDesigner.ReportDesignerView
+                                 {
+                                     Owner = this
+                                 };
+                                 
+                                 // 修改数据上下文的创建方式以避免可能的栈溢出
+                                 designerWindow.ShowDialog();
+                                 Debug.WriteLine("自定义报告设计视图已关闭");
+                             }
+                             catch (Exception ex)
+                             {
+                                 Debug.WriteLine($"打开自定义报告设计视图时发生错误: {ex.Message}\n{ex.StackTrace}");
+                                 MessageBox.Show($"打开报告设计器时出错: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                             }
+                             break;
                          default:
                              Debug.WriteLine($"Unknown navigation tag: {tag}. Displaying welcome view.");
                              // Optionally navigate to a default/welcome view via service if needed

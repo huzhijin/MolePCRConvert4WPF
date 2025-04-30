@@ -29,6 +29,14 @@ namespace MolePCRConvert4WPF
             templateFixWindow.ShowDialog();
         }
 
+        private void MenuReportDesigner_Click(object sender, RoutedEventArgs e)
+        {
+            // 打开自定义报告设计器窗口
+            var reportDesignerWindow = new Views.ReportDesigner.ReportDesignerView();
+            reportDesignerWindow.Owner = this;
+            reportDesignerWindow.ShowDialog();
+        }
+
         private void MenuExit_Click(object sender, RoutedEventArgs e)
         {
             // 退出应用程序

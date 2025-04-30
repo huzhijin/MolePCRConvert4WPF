@@ -84,6 +84,12 @@
                                     <TextBlock Text="报告模板配置" Margin="16,0,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
                             </ListBoxItem>
+                            <ListBoxItem Tag="ReportCustomTemplate">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="FileDocumentEdit" Width="24" Height="24" VerticalAlignment="Center" />
+                                    <TextBlock Text="自定义报告设计" Margin="16,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </ListBoxItem>
                         </ListBox>
                     </DockPanel>
                 </materialDesign:DrawerHost.LeftDrawerContent>

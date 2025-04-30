@@ -99,15 +99,38 @@ namespace MolePCRConvert4WPF.Infrastructure.Services
 
         public async Task<ReportTemplate> SaveTemplateAsync(ReportTemplate template, byte[] gridData)
         {
-            _logger.LogInformation("保存模板: {TemplateName}", template.Name);
+            _logger.LogInformation("保存模板: {TemplateName}", template?.Name ?? "未知模板");
             
             try
             {
+                // 参数验证
+                if (template == null)
+                {
+                    throw new ArgumentNullException(nameof(template), "模板对象不能为空");
+                }
+                
+                if (gridData == null || gridData.Length == 0)
+                {
+                    _logger.LogWarning("模板数据为空，尝试从文件中读取: {FilePath}", template.FilePath);
+                    
+                    // 如果提供的数据为空但文件存在，读取现有文件内容
+                    if (File.Exists(template.FilePath))
+                    {
+                        gridData = await File.ReadAllBytesAsync(template.FilePath);
+                        _logger.LogInformation("从现有文件中读取了 {Length} 字节的数据", gridData.Length);
+                    }
+                    else
+                    {
+                        throw new ArgumentNullException(nameof(gridData), "模板数据不能为空，且文件不存在");
+                    }
+                }
+                
                 // 确保文件路径有效
                 if (string.IsNullOrEmpty(template.FilePath))
                 {
                     string fileName = $"{template.Name}.rgf";
                     template.FilePath = Path.Combine(_templatesDirPath, fileName);
+                    _logger.LogInformation("已生成新的文件路径: {FilePath}", template.FilePath);
                 }
                 
                 // 保存ReoGrid数据
@@ -294,6 +317,78 @@ namespace MolePCRConvert4WPF.Infrastructure.Services
             {
                 _logger.LogError(ex, "删除模板时出错");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 打开模板设计器
+        /// </summary>
+        /// <param name="template">要打开的模板</param>
+        /// <returns>异步任务</returns>
+        public async Task OpenTemplateDesignerAsync(ReportTemplate template)
+        {
+            _logger.LogInformation("打开模板设计器: {TemplateName}", template?.Name ?? "未知模板");
+            
+            try
+            {
+                // 参数验证
+                if (template == null)
+                {
+                    throw new ArgumentNullException(nameof(template), "模板对象不能为空");
+                }
+                
+                if (string.IsNullOrEmpty(template.FilePath) || !File.Exists(template.FilePath))
+                {
+                    throw new FileNotFoundException("模板文件不存在", template.FilePath);
+                }
+                
+                // 检查是否为ReoGrid模板
+                if (!template.IsReoGridTemplate)
+                {
+                    throw new InvalidOperationException("只能使用此服务打开ReoGrid模板");
+                }
+                
+                // 读取模板文件
+                byte[] gridData = await File.ReadAllBytesAsync(template.FilePath);
+                
+                // 打开设计器窗口
+                await Task.Run(() =>
+                {
+                    // --- 开始注释 ---
+                    // using (var tempStream = new MemoryStream(gridData))
+                    // {
+                    //     var designer = new ReoGridDesigner.DesignerForm();
+                    //     designer.OpenFile(tempStream);
+                        
+                    //     // 注册保存事件
+                    //     designer.FileSaved += (sender, args) =>
+                    //     {
+                    //         if (args.Stream != null)
+                    //         {
+                    //             // 保存模板到文件
+                    //             using (var ms = new MemoryStream())
+                    //             {
+                    //                 args.Stream.CopyTo(ms);
+                    //                 byte[] savedData = ms.ToArray();
+                                    
+                    //                 // 异步保存
+                    //                 _ = SaveTemplateAsync(template, savedData);
+                    //             }
+                    //         }
+                    //     };
+                        
+                    //     designer.ShowDialog();
+                    // }
+                    // --- 结束注释 ---
+                    _logger.LogWarning("打开模板设计器功能已临时禁用，需要重构以将 UI 操作移至 App 层。");
+                });
+                
+                _logger.LogInformation("模板设计器已关闭: {TemplateName}", template.Name);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "打开模板设计器时出错");
+                throw;
             }
         }
 

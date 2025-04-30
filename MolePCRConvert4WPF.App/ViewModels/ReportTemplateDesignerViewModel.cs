@@ -9,6 +9,11 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Collections.Generic;
+using System.Linq;
+using unvell.ReoGrid.Graphics;
+using unvell.ReoGrid;
+using MolePCRConvert4WPF.App.Commands;
 
 namespace MolePCRConvert4WPF.App.ViewModels
 {
@@ -53,10 +58,29 @@ namespace MolePCRConvert4WPF.App.ViewModels
         [ObservableProperty]
         private string? _statusMessage;
         
+        /// <summary>
+        /// 可用的模板变量列表
+        /// </summary>
+        [ObservableProperty]
+        private ObservableCollection<TemplateVariable> _availableVariables = new();
+        
+        /// <summary>
+        /// 按类别分组的模板变量
+        /// </summary>
+        [ObservableProperty]
+        private Dictionary<string, List<MolePCRConvert4WPF.Core.Models.TemplateVariable>> _variablesByCategory = new();
+        
+        /// <summary>
+        /// 按类别分组的变量（用于UI显示）
+        /// </summary>
+        [ObservableProperty]
+        private ObservableCollection<MolePCRConvert4WPF.App.Models.VariableCategoryGroup> _variableCategoryGroups = new();
+        
         // 命令
-        public IRelayCommand SaveCommand { get; }
-        public IRelayCommand SaveAsCommand { get; }
-        public IRelayCommand NewTemplateCommand { get; }
+        public CommunityToolkit.Mvvm.Input.IRelayCommand SaveCommand { get; }
+        public CommunityToolkit.Mvvm.Input.IRelayCommand SaveAsCommand { get; }
+        public CommunityToolkit.Mvvm.Input.IRelayCommand NewTemplateCommand { get; }
+        public CommunityToolkit.Mvvm.Input.IRelayCommand<Core.Models.TemplateVariable> InsertVariableCommand { get; }
         
         public ReportTemplateDesignerViewModel(
             ILogger<ReportTemplateDesignerViewModel> logger,
@@ -65,11 +89,100 @@ namespace MolePCRConvert4WPF.App.ViewModels
             _logger = logger;
             _designerService = designerService;
             
-            // 初始化命令
+            // 使用完全限定的命名空间来避免RelayCommand冲突
             SaveCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(SaveTemplate, CanSave);
             SaveAsCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(SaveTemplateAs, () => !IsLoading);
             NewTemplateCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(CreateNewTemplate, () => !IsLoading);
+            InsertVariableCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<Core.Models.TemplateVariable>(InsertVariable, (v) => v != null && !IsLoading);
+            
+            // 初始化变量
+            InitializeTemplateVariables();
         }
+        
+        /// <summary>
+        /// 初始化模板变量
+        /// </summary>
+        private void InitializeTemplateVariables()
+        {
+            // 系统变量
+            var systemVariables = new List<TemplateVariable>
+            {
+                new TemplateVariable { Name = "${Date}", DisplayName = "当前日期", Category = "系统", Description = "当前日期 (yyyy-MM-dd)" },
+                new TemplateVariable { Name = "${Time}", DisplayName = "当前时间", Category = "系统", Description = "当前时间 (HH:mm:ss)" },
+                new TemplateVariable { Name = "${DateTime}", DisplayName = "日期时间", Category = "系统", Description = "当前日期和时间 (yyyy-MM-dd HH:mm:ss)" },
+                new TemplateVariable { Name = "${UserName}", DisplayName = "用户名", Category = "系统", Description = "当前操作用户名" },
+                new TemplateVariable { Name = "${ComputerName}", DisplayName = "计算机名", Category = "系统", Description = "计算机名称" }
+            };
+            
+            // 样本信息变量
+            var sampleVariables = new List<TemplateVariable>
+            {
+                new TemplateVariable { Name = "${SampleCount}", DisplayName = "样本数量", Category = "样本信息", Description = "检测样本总数" },
+                new TemplateVariable { Name = "${PositiveSampleCount}", DisplayName = "阳性样本数", Category = "样本信息", Description = "阳性样本数量" },
+                new TemplateVariable { Name = "${NegativeSampleCount}", DisplayName = "阴性样本数", Category = "样本信息", Description = "阴性样本数量" },
+                new TemplateVariable { Name = "${UndeterminedSampleCount}", DisplayName = "未确定样本数", Category = "样本信息", Description = "无法确定结果的样本数量" }
+            };
+            
+            // 板信息变量
+            var plateVariables = new List<TemplateVariable>
+            {
+                new TemplateVariable { Name = "${PlateId}", DisplayName = "板ID", Category = "板信息", Description = "检测板唯一标识" },
+                new TemplateVariable { Name = "${RunDate}", DisplayName = "运行日期", Category = "板信息", Description = "检测运行日期" },
+                new TemplateVariable { Name = "${RunTime}", DisplayName = "运行时间", Category = "板信息", Description = "检测运行时间" },
+                new TemplateVariable { Name = "${RunBy}", DisplayName = "操作人员", Category = "板信息", Description = "执行检测的操作人员" },
+                new TemplateVariable { Name = "${InstrumentName}", DisplayName = "仪器名称", Category = "板信息", Description = "使用的仪器名称" },
+                new TemplateVariable { Name = "${InstrumentSerialNumber}", DisplayName = "仪器序列号", Category = "板信息", Description = "仪器序列号" }
+            };
+            
+            // 检测结果统计变量
+            var resultVariables = new List<TemplateVariable>
+            {
+                new TemplateVariable { Name = "${PositiveRate}", DisplayName = "阳性率", Category = "结果统计", Description = "阳性样本比例 (%)" },
+                new TemplateVariable { Name = "${NegativeRate}", DisplayName = "阴性率", Category = "结果统计", Description = "阴性样本比例 (%)" },
+                new TemplateVariable { Name = "${UndeterminedRate}", DisplayName = "未确定率", Category = "结果统计", Description = "未确定样本比例 (%)" }
+            };
+            
+            // 合并所有变量到一个列表
+            var allVariables = new List<TemplateVariable>();
+            allVariables.AddRange(systemVariables);
+            allVariables.AddRange(sampleVariables);
+            allVariables.AddRange(plateVariables);
+            allVariables.AddRange(resultVariables);
+            
+            // 更新可用变量集合
+            AvailableVariables = new ObservableCollection<TemplateVariable>(allVariables.OrderBy(v => v.Category).ThenBy(v => v.DisplayName));
+            
+            // 按类别分组变量
+            VariablesByCategory = allVariables
+                .GroupBy(v => v.Category)
+                .ToDictionary(g => g.Key, g => g.ToList());
+                
+            // 转换为UI显示用的分组集合
+            VariableCategoryGroups = MolePCRConvert4WPF.App.Utils.TemplateVariableConverter.ConvertDictionaryToVariableCategoryGroupsLinq(VariablesByCategory);
+        }
+        
+        /// <summary>
+        /// 插入变量到模板
+        /// </summary>
+        /// <param name="variable">要插入的变量</param>
+        private void InsertVariable(Core.Models.TemplateVariable variable)
+        {
+            if (variable == null) return;
+            
+            // 这里需要实现ReoGrid控件的变量插入逻辑
+            // 通常是将变量名称插入到当前选中的单元格中
+            
+            // 产生一个事件，让视图知道需要插入变量
+            VariableInsertRequested?.Invoke(this, variable);
+            
+            // 标记为已修改
+            IsModified = true;
+        }
+        
+        /// <summary>
+        /// 变量插入请求事件
+        /// </summary>
+        public event EventHandler<Core.Models.TemplateVariable> VariableInsertRequested;
         
         /// <summary>
         /// 加载模板
@@ -262,11 +375,23 @@ namespace MolePCRConvert4WPF.App.ViewModels
         }
         
         /// <summary>
-        /// 是否可以保存
+        /// 检查是否可以保存
         /// </summary>
         private bool CanSave()
         {
             return !IsLoading && CurrentTemplate != null && IsModified;
+        }
+        
+        /// <summary>
+        /// 手动通知命令状态已变更
+        /// </summary>
+        public void NotifyCommandsCanExecuteChanged()
+        {
+            // 使用CommunityToolkit.Mvvm.Input中的NotifyCanExecuteChanged方法
+            (SaveCommand as CommunityToolkit.Mvvm.Input.IRelayCommand)?.NotifyCanExecuteChanged();
+            (SaveAsCommand as CommunityToolkit.Mvvm.Input.IRelayCommand)?.NotifyCanExecuteChanged();
+            (NewTemplateCommand as CommunityToolkit.Mvvm.Input.IRelayCommand)?.NotifyCanExecuteChanged();
+            (InsertVariableCommand as CommunityToolkit.Mvvm.Input.IRelayCommand)?.NotifyCanExecuteChanged();
         }
     }
     

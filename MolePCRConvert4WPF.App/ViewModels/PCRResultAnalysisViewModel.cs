@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Globalization; // Added for concentration formatting
 
 namespace MolePCRConvert4WPF.App.ViewModels
 {
@@ -28,29 +29,44 @@ namespace MolePCRConvert4WPF.App.ViewModels
         private readonly IPCRAnalysisServiceFactory _pcrAnalysisServiceFactory;
         private readonly IReportService _reportService;
 
-        // 新增字段：存储最新的原始分析结果
+        // 存储最新的原始分析结果
         private List<AnalysisResultItem>? _latestAnalysisResults;
+        // 存储所有定义好的患者和他们的孔位 (来自上一个视图设置)
+        private List<WellLayout>? _allDefinedWells;
 
         /// <summary>
-        /// 结果项集合
+        /// 原始结果项集合（不再直接绑定UI）
+        /// </summary>
+        //[ObservableProperty] // No longer directly bound
+        private ObservableCollection<PCRResultItem> _resultItems = new();
+
+        /// <summary>
+        /// 用于绑定到UI的结果集合
         /// </summary>
         [ObservableProperty]
-        private ObservableCollection<PCRResultItem> _resultItems = new();
-        
+        private ObservableCollection<PCRResultItem> _displayedResults = new();
+
         /// <summary>
-        /// 是否有分析结果
+        /// 控制是否显示所有患者（包括无结果的）
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(DisplayedResults))] // Trigger update when this changes
+        private bool _showAllPatients = false; // Default to showing only results
+
+        /// <summary>
+        /// 是否有分析结果 (基于 DisplayedResults)
         /// </summary>
         [ObservableProperty]
         private bool _hasResults;
-        
+
         /// <summary>
-        /// 总记录数
+        /// 总记录数 (基于 DisplayedResults)
         /// </summary>
         [ObservableProperty]
         private int _totalCount;
-        
+
         /// <summary>
-        /// 患者数量
+        /// 患者数量 (基于 DisplayedResults)
         /// </summary>
         [ObservableProperty]
         private int _patientCount;
@@ -97,17 +113,35 @@ namespace MolePCRConvert4WPF.App.ViewModels
         private async Task LoadAndAnalyzeDataAsync()
         {
             if (IsLoading) return;
+            _logger.LogInformation("LoadAndAnalyzeDataAsync started.");
 
             IsLoading = true;
             StatusMessage = "正在加载和分析数据...";
-            ResultItems.Clear(); // Clear previous results
+            // ResultItems.Clear(); // Clear previous results - No longer clearing this directly if needed elsewhere
+            DisplayedResults.Clear(); // Clear displayed results
             _latestAnalysisResults = null; // Clear previous raw analysis results
+            _allDefinedWells = null; // Clear defined wells
 
             try
             {
                 var currentPlate = _appStateService.CurrentPlate;
-                // Get the analysis method file path (assuming it's stored in AppStateService)
                 string? methodFilePath = _appStateService.CurrentAnalysisMethodPath;
+                _logger.LogInformation("Retrieved CurrentPlate (ID: {PlateId}, Name: {PlateName}) and MethodFilePath: {MethodPath}", currentPlate?.Id, currentPlate?.Name, methodFilePath);
+
+                // <<< ADDED DEBUG LOGGING >>>
+                if (currentPlate?.WellLayouts != null)
+                {
+                    int countWithName = currentPlate.WellLayouts.Count(w => !string.IsNullOrEmpty(w.PatientName));
+                    _logger.LogInformation("[DEBUG] Before assigning to _allDefinedWells, currentPlate.WellLayouts has {Count} wells with non-null/empty PatientName.", countWithName);
+                    // Log first few patient names found
+                    var namesFound = currentPlate.WellLayouts.Where(w => !string.IsNullOrEmpty(w.PatientName)).Select(w => w.PatientName).Distinct().Take(10);
+                    _logger.LogInformation("[DEBUG] Names found in currentPlate.WellLayouts: {Names}", string.Join(", ", namesFound));
+                }
+                else
+                {
+                     _logger.LogWarning("[DEBUG] currentPlate or currentPlate.WellLayouts is null before assignment check.");
+                }
+                // <<< END ADDED DEBUG LOGGING >>>
 
                 if (currentPlate == null)
                 {
@@ -123,9 +157,20 @@ namespace MolePCRConvert4WPF.App.ViewModels
                     IsLoading = false; // Reset loading flag
                     return;
                 }
-                
-                // 创建一个当前板的深度副本用于分析，避免修改原始数据
-                // 只复制Plate类实际存在的属性
+
+                // Assign _allDefinedWells field using the potentially updated WellLayouts from AppStateService
+                // This should contain the patient names assigned in the previous step.
+                if (currentPlate.WellLayouts == null)
+                {
+                     _logger.LogWarning("currentPlate.WellLayouts is null before assigning _allDefinedWells.");
+                     StatusMessage = "错误: 当前板数据缺少孔位布局信息.";
+                     IsLoading = false;
+                     return;
+                }
+                _allDefinedWells = currentPlate.WellLayouts.ToList(); // Assign from AppStateService plate's layout
+                _logger.LogInformation("Assigned {WellCount} defined wells to _allDefinedWells field (from AppStateService).", _allDefinedWells.Count);
+
+                // Create a deep copy of the plate FOR ANALYSIS, ensuring patient info is copied
                 var plateCopy = new Plate
                 {
                     Id = currentPlate.Id,
@@ -133,42 +178,40 @@ namespace MolePCRConvert4WPF.App.ViewModels
                     Rows = currentPlate.Rows,
                     Columns = currentPlate.Columns,
                     InstrumentType = currentPlate.InstrumentType,
-                    // 移除了不存在的属性：Description, FileName, DateCreated
                     WellLayouts = new List<WellLayout>()
                 };
-                
-                // 复制所有孔位数据
-                foreach (var originalWell in currentPlate.WellLayouts)
+
+                // Copy well data, including patient info from _allDefinedWells (which came from AppStateService)
+                foreach (var originalWell in _allDefinedWells) // Iterate over the list we just assigned
                 {
-                    // 对每个孔位创建副本
                     var wellCopy = new WellLayout
                     {
                         Id = originalWell.Id,
                         Row = originalWell.Row,
                         Column = originalWell.Column,
-                        // Position是只读属性，会自动计算
-                        PatientName = originalWell.PatientName,
-                        PatientCaseNumber = originalWell.PatientCaseNumber,
+                        PatientName = originalWell.PatientName, // Copy Name
+                        PatientCaseNumber = originalWell.PatientCaseNumber, // Copy CaseNumber
                         SampleName = originalWell.SampleName,
                         CtValue = originalWell.CtValue,
                         Channel = originalWell.Channel
-                        // 复制其他需要的属性
                     };
                     plateCopy.WellLayouts.Add(wellCopy);
                 }
-                
-                _logger.LogInformation("Created a deep copy of the plate with {count} wells for analysis", 
-                    plateCopy.WellLayouts.Count);
+                _logger.LogInformation("Created a deep copy of the plate with {count} wells for analysis (including patient info)", plateCopy.WellLayouts.Count);
+
 
                 // Load the configuration rules using the correct service method
                 ObservableCollection<AnalysisMethodRule> configRules;
                 try
                 {
+                    _logger.LogInformation("Loading analysis configuration from: {FilePath}", methodFilePath);
                     configRules = await _methodConfigService.LoadConfigurationAsync(methodFilePath);
                     if (configRules == null || !configRules.Any())
                     {
+                        _logger.LogWarning("Loaded analysis configuration rules are null or empty.");
                         throw new Exception("加载的分析配置规则为空.");
                     }
+                    _logger.LogInformation("Successfully loaded {RuleCount} analysis configuration rules.", configRules.Count);
                 }
                 catch (Exception configEx)
                 {
@@ -177,9 +220,8 @@ namespace MolePCRConvert4WPF.App.ViewModels
                     IsLoading = false;
                     return;
                 }
-                
+
                 // Create an AnalysisMethodConfiguration object from the loaded rules
-                // (Assuming PCRAnalysisService expects the wrapper object)
                 var analysisConfig = new AnalysisMethodConfiguration
                 {
                     Name = System.IO.Path.GetFileNameWithoutExtension(methodFilePath), // Use file name as config name
@@ -188,120 +230,230 @@ namespace MolePCRConvert4WPF.App.ViewModels
 
                 // 获取当前仪器类型的PCR分析服务
                 IPCRAnalysisService pcrAnalysisService = _pcrAnalysisServiceFactory.GetAnalysisService(currentPlate.InstrumentType);
-                _logger.LogInformation($"使用{currentPlate.InstrumentType}类型对应的PCR分析服务");
-                
+                _logger.LogInformation($"Using PCR analysis service for instrument type: {currentPlate.InstrumentType}");
+
                 // 开始分析
                 try
                 {
+                    _logger.LogInformation("Calling pcrAnalysisService.AnalyzeAsync with plate copy containing patient info...");
                     List<AnalysisResultItem> analysisResults = await pcrAnalysisService.AnalyzeAsync(plateCopy, analysisConfig);
-                    if (analysisResults == null || !analysisResults.Any())
-                    {
-                        _logger.LogWarning("分析结果为空");
-                        StatusMessage = "分析结果为空";
-                        _latestAnalysisResults = null; // 确保清除
-                        IsLoading = false;
-                        return;
-                    }
+                    _logger.LogInformation("pcrAnalysisService.AnalyzeAsync completed. Received {ResultCount} results.", analysisResults?.Count ?? 0);
 
-                    _logger.LogInformation($"PCR分析完成，获取 {analysisResults.Count} 条结果");
-                    
-                    // 存储最新的分析结果
-                    _latestAnalysisResults = analysisResults;
+                    // Store the latest raw analysis results
+                    _latestAnalysisResults = analysisResults ?? new List<AnalysisResultItem>();
 
-                    // Process results for display (sorting, grouping logic)
-                    ProcessAnalysisResults(analysisResults);
+                    // Process results for display
+                    ProcessAnalysisResults(); // Initial processing after load
 
-                    StatusMessage = $"分析完成. 共 {ResultItems.Count} 条记录, {PatientCount} 个患者.";
+                    // Update status message based on DisplayedResults
+                    UpdateStatusMessage(); // Use a helper method to update status
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "分析过程中发生错误");
+                    _logger.LogError(ex, "Error during PCR analysis execution.");
                     StatusMessage = $"分析出错: {ex.Message}";
-                    // Optionally show a message box
-                     MessageBox.Show($"分析过程中发生错误:\n{ex.Message}", "分析错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"分析过程中发生错误:\n{ex.Message}", "分析错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during data load and analysis.");
+                _logger.LogError(ex, "Unhandled error during data load and analysis process.");
                 StatusMessage = $"分析出错: {ex.Message}";
-                // Optionally show a message box
-                 MessageBox.Show($"分析过程中发生错误:\n{ex.Message}", "分析错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"分析过程中发生错误:\n{ex.Message}", "分析错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 IsLoading = false;
+                _logger.LogInformation("LoadAndAnalyzeDataAsync finished.");
             }
         }
 
-        private void ProcessAnalysisResults(List<AnalysisResultItem> results)
+        // Renamed ProcessAnalysisResults to handle both modes
+        private void ProcessAnalysisResults()
         {
-            if (results == null) return;
+            _logger.LogInformation("ProcessAnalysisResults started. ShowAllPatients: {ShowAll}. LatestResults count: {LatestCount}. DefinedWells count: {DefinedCount}.", ShowAllPatients, _latestAnalysisResults?.Count ?? -1, _allDefinedWells?.Count ?? -1);
 
-            // Sort results: typically by patient first, then well position or channel
-            var sortedResults = results
-                .OrderBy(r => r.PatientName == "未知患者" ? "Z" : r.PatientName ?? string.Empty) // 将"未知患者"排在最后
-                .ThenBy(r => GetRowIndex(r.WellPosition?.Substring(0, 1))) // Sort by Row first (A, B, C...)
-                .ThenBy(r => int.TryParse(r.WellPosition?.Substring(1), out int col) ? col : int.MaxValue) // Then by Column (1, 2, 3...)
-                .ThenBy(r => r.Channel) // Then by Channel
-                .ToList();
-
-            ResultItems.Clear();
-            string? lastPatientName = null;
-            string? lastCaseNumber = null;
-            
-            foreach (var result in sortedResults)
+            if (_latestAnalysisResults == null || _allDefinedWells == null)
             {
-                // 确定是否是同一患者的第一行
-                bool isFirstPatientRow = result.PatientName != lastPatientName || result.PatientCaseNumber != lastCaseNumber;
-                
-                if (isFirstPatientRow) 
-                {
-                    lastPatientName = result.PatientName;
-                    lastCaseNumber = result.PatientCaseNumber;
-                }
-                
-                // 创建新的PCRResultItem对象
-                var pcrResultItem = new PCRResultItem
-                {
-                    PatientName = result.PatientName ?? "未知患者",
-                    PatientCaseNumber = result.PatientCaseNumber ?? "-",
-                    WellPosition = result.WellPosition ?? "-",
-                    Channel = result.Channel ?? "-",
-                    TargetName = result.TargetName ?? "-",
-                    // CT值处理：如果有特殊标记，显示特殊标记；否则显示格式化的CT值
-                    CtValue = result.CtValue,
-                    CtValueDisplay = !string.IsNullOrEmpty(result.CtValueSpecialMark) 
-                        ? result.CtValueSpecialMark 
-                        : (result.CtValue.HasValue ? Math.Round(result.CtValue.Value, 2).ToString() : "-"),
-                    // 处理浓度值 - 使用科学计数法格式化，如有特殊标记则显示"-"
-                    Concentration = !string.IsNullOrEmpty(result.CtValueSpecialMark) 
-                        ? "-" 
-                        : (result.Concentration.HasValue ? FormatConcentration(result.Concentration.Value) : "-"),
-                    // 处理检测结果 - 保留原始结果字符串
-                    Result = result.DetectionResult ?? "-",
-                    // 判断是否为阳性 - 有特殊标记时不标记为阳性
-                    IsPositive = string.IsNullOrEmpty(result.CtValueSpecialMark) && IsPositiveResult(result.DetectionResult),
-                    // 添加患者分组标记
-                    IsFirstPatientRow = isFirstPatientRow
-                };
-                
-                ResultItems.Add(pcrResultItem);
+                 _logger.LogWarning("Cannot process results: _latestAnalysisResults or _allDefinedWells is null.");
+                 UpdateStatusMessage(); // Update status even if empty
+                 DisplayedResults.Clear(); // Ensure display is cleared
+                 return; // Nothing to process
             }
-            
-            // 更新统计值
-            TotalCount = ResultItems.Count;
-            PatientCount = ResultItems
-                .Select(r => r.PatientName)
-                .Where(name => !string.IsNullOrEmpty(name))
-                .Distinct()
-                .Count();
-            HasResults = TotalCount > 0;
+
+            List<PCRResultItem> itemsToAdd = new();
+            var patientDataLookup = _allDefinedWells
+                                     .Where(w => !string.IsNullOrEmpty(w.PatientName))
+                                     .ToLookup(w => w.Position);
+            _logger.LogInformation("Created patientDataLookup based on _allDefinedWells. Keys: {KeyCount}", patientDataLookup.Count);
+
+            // 1. Process actual analysis results and attempt to enrich with patient data from _allDefinedWells
+            // Also collect the names of patients who definitely have results.
+            HashSet<string> patientsWithActualResults = new HashSet<string>();
+            if (_latestAnalysisResults != null)
+            {
+                 _logger.LogInformation("Processing {Count} actual analysis results.", _latestAnalysisResults.Count);
+                 foreach (var result in _latestAnalysisResults)
+                 {
+                    // Primarily trust PatientName from _allDefinedWells based on WellPosition
+                    string finalPatientName = "未知患者";
+                    string finalCaseNumber = "-";
+                    WellLayout? wellInfo = null;
+
+                    if (!string.IsNullOrEmpty(result.WellPosition) && patientDataLookup.Contains(result.WellPosition))
+                    {
+                        wellInfo = patientDataLookup[result.WellPosition].FirstOrDefault(w => !string.IsNullOrEmpty(w.PatientName));
+                    }
+
+                    if (wellInfo != null)
+                    {
+                        finalPatientName = wellInfo.PatientName; // Trust the definition
+                        finalCaseNumber = wellInfo.PatientCaseNumber ?? "-";
+                        // Log if the result had a different name (or null)
+                        if (result.PatientName != finalPatientName)
+                        {
+                            _logger.LogInformation("Corrected/Set Patient Name for Well {Well}: '{Name}' (Result was: '{ResultName}')", result.WellPosition, finalPatientName, result.PatientName ?? "NULL");
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(result.PatientName))
+                    {   // Fallback to result's name if lookup failed but result has a name
+                        finalPatientName = result.PatientName;
+                        finalCaseNumber = result.PatientCaseNumber ?? "-";
+                        _logger.LogWarning("Well {Well} not found in patientDataLookup or had no name, using name from result: '{Name}'", result.WellPosition, finalPatientName);
+                    }
+                    else
+                    {   // Truly unknown patient
+                        _logger.LogWarning("Could not determine patient name for result at well {Well}. Marking as '未知患者'.", result.WellPosition);
+                    }
+
+                    // Add to the set of patients with results IF the name is known
+                    if (finalPatientName != "未知患者")
+                    {
+                        patientsWithActualResults.Add(finalPatientName);
+                    }
+
+                    itemsToAdd.Add(new PCRResultItem
+                    {
+                        PatientName = finalPatientName,
+                        PatientCaseNumber = finalCaseNumber, // Use case number from lookup or fallback
+                        WellPosition = result.WellPosition,
+                        Channel = result.Channel,
+                        TargetName = result.TargetName,
+                        CtValue = result.CtValue.HasValue ? result.CtValue.Value.ToString("F2") : (result.CtValueSpecialMark ?? "-"),
+                        Concentration = result.Concentration.HasValue ? FormatConcentration(result.Concentration.Value) : "-",
+                        FinalResult = result.DetectionResult ?? "无判定规则",
+                        IsPositive = IsPositiveResult(result.DetectionResult)
+                        // IsFirstPatientRow will be set after sorting
+                    });
+                 }
+            }
+            _logger.LogInformation("After processing actual results, itemsToAdd count: {Count}. Patients identified with results: {PatientNames}", itemsToAdd.Count, string.Join(", ", patientsWithActualResults));
+
+
+            // 2. If showing all patients, find defined patients WITHOUT results and add placeholders
+            if (ShowAllPatients)
+            {
+                _logger.LogInformation("ShowAllPatients is true. Processing placeholders...");
+
+                // Get all unique patient info defined in _allDefinedWells (REVISED LOGIC)
+                var allDefinedPatientNames = _allDefinedWells
+                    .Where(w => !string.IsNullOrEmpty(w.PatientName))
+                    .Select(w => w.PatientName)
+                    .Distinct()
+                    .ToList();
+                _logger.LogInformation("Found {Count} unique defined patient names from _allDefinedWells: {PatientNames}", allDefinedPatientNames.Count, string.Join(", ", allDefinedPatientNames));
+
+                // Now reconstruct the patient info list
+                var allDefinedPatientsInfo = allDefinedPatientNames
+                    .Select(name => {
+                        // Find the first well for this patient to get a case number (if any)
+                        var wellForPatient = _allDefinedWells.FirstOrDefault(w => w.PatientName == name && !string.IsNullOrEmpty(w.PatientCaseNumber));
+                        return new {
+                            PatientName = name,
+                            CaseNumber = wellForPatient?.PatientCaseNumber ?? "-"
+                        };
+                    })
+                    .ToList();
+                 _logger.LogInformation("Reconstructed patient info list with {Count} entries.", allDefinedPatientsInfo.Count);
+
+
+                int placeholdersAdded = 0;
+                foreach (var patientInfo in allDefinedPatientsInfo)
+                {
+                    // Add placeholder ONLY if this patient name was NOT found among those with actual results
+                    if (!patientsWithActualResults.Contains(patientInfo.PatientName))
+                    {
+                         _logger.LogInformation("--> Adding placeholder for patient defined but without results: {PatientName}, Case#: {CaseNumber}", patientInfo.PatientName, patientInfo.CaseNumber);
+                        itemsToAdd.Add(new PCRResultItem
+                        {
+                            PatientName = patientInfo.PatientName,
+                            PatientCaseNumber = patientInfo.CaseNumber,
+                            WellPosition = "-", Channel = "-", TargetName = "-", CtValue = "-", Concentration = "-", FinalResult = "无结果", IsPositive = false,
+                            IsFirstPatientRow = true // Placeholder row is always the 'first' for that patient display
+                        });
+                        placeholdersAdded++;
+                    } else {
+                         _logger.LogInformation("--> Skipping placeholder for patient {PatientName} because they have results.", patientInfo.PatientName);
+                    }
+                }
+                 _logger.LogInformation("Finished processing placeholders. Added {Count} placeholder rows.", placeholdersAdded);
+                 _logger.LogInformation("After processing placeholders, itemsToAdd count: {Count}", itemsToAdd.Count);
+            }
+
+             // 3. Sort all items (results + placeholders) together
+            var sortedResults = itemsToAdd
+                .OrderBy(r => r.PatientName == "未知患者" ? 1 : 0) // Put "未知患者" last
+                .ThenBy(r => r.PatientName)
+                .ThenBy(r => r.PatientCaseNumber) // Sort by case number within patient name
+                .ThenBy(r => r.WellPosition == "-" ? 0 : 1) // Put placeholders first within patient group
+                .ThenBy(r => GetRowIndex(r.WellPosition?.Length > 0 ? r.WellPosition[0].ToString() : null)) // Sort by Row (A, B, C...)
+                .ThenBy(r => int.TryParse(r.WellPosition?.Length > 1 ? r.WellPosition.Substring(1) : string.Empty, out int col) ? col : int.MaxValue) // Then by Column (1, 2, 3...)
+                .ThenBy(r => r.Channel == "-" ? 1 : 0) // Keep placeholder channel last (should only apply to placeholder rows)
+                .ThenBy(r => r.Channel) // Then by Channel for real results
+                .ToList();
+             _logger.LogInformation("Sorting completed. {Count} items to display.", sortedResults.Count);
+
+            // 4. Add sorted results to the displayed collection and set IsFirstPatientRow
+            DisplayedResults.Clear(); // Clear before adding sorted list
+            string? lastPatientName = null;
+            foreach (var item in sortedResults)
+            {
+                bool isFirst = item.PatientName != lastPatientName;
+
+                // Set IsFirstPatientRow based on PatientName change for non-placeholder rows.
+                // Placeholder rows already have IsFirstPatientRow=true set during creation.
+                if (item.WellPosition != "-") // Only adjust for actual result rows
+                {
+                    item.IsFirstPatientRow = isFirst;
+                }
+                // else: keep IsFirstPatientRow = true for placeholders
+
+                DisplayedResults.Add(item);
+                lastPatientName = item.PatientName;
+            }
+             _logger.LogInformation("Finished adding items to DisplayedResults. Final count: {Count}", DisplayedResults.Count);
+
+            UpdateStatusMessage(); // Update count and message
+        }
+
+        private void UpdateStatusMessage()
+        {
+             TotalCount = DisplayedResults.Count;
+             PatientCount = DisplayedResults.Select(r => r.PatientName).Distinct().Count();
+             HasResults = TotalCount > 0;
+             StatusMessage = $"{(ShowAllPatients ? "显示所有患者" : "仅显示有结果的患者")}. 共 {TotalCount} 条记录, {PatientCount} 个患者.";
+
+             // Notify commands about CanExecute changes
+             GeneratePatientReportCommand.NotifyCanExecuteChanged();
+             GeneratePlateReportCommand.NotifyCanExecuteChanged();
+             ExportCommand.NotifyCanExecuteChanged();
         }
 
         private bool CanGenerateReport()
         {
-            return ResultItems.Any() && !IsLoading;
+            // Allow report generation even if showing placeholders, base it on actual analysis results
+            // return !IsLoading && _latestAnalysisResults != null && _latestAnalysisResults.Any();
+             return !IsLoading && HasResults; // Allow export/report if anything is displayed
         }
 
         private async void GeneratePatientReport()
@@ -707,7 +859,7 @@ namespace MolePCRConvert4WPF.App.ViewModels
                 IsLoading = true;
                 StatusMessage = "正在准备导出结果...";
                 
-                if (!ResultItems.Any())
+                if (!DisplayedResults.Any())
                 {
                     MessageBox.Show("没有可导出的结果数据。", "导出失败", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
@@ -789,29 +941,30 @@ namespace MolePCRConvert4WPF.App.ViewModels
                     
                     // 填充数据行
                     int row = 2;
-                    foreach (var item in ResultItems)
+                    // Use the DisplayedResults collection which contains ViewModel's PCRResultItem
+                    foreach (var item in DisplayedResults)
                     {
                         worksheet.Cells[row, 1].Value = item.PatientName;
-                        worksheet.Cells[row, 2].Value = item.PatientCaseNumber;
+                        worksheet.Cells[row, 2].Value = item.PatientCaseNumber; // Use the added property
                         worksheet.Cells[row, 3].Value = item.WellPosition;
                         worksheet.Cells[row, 4].Value = item.Channel;
                         worksheet.Cells[row, 5].Value = item.TargetName;
                         
-                        // 设置CT值数据和格式，保留2位小数
-                        if (item.CtValue.HasValue)
+                        // CT Value is string in ViewModel's PCRResultItem, try parsing back to double for Excel formatting
+                        if (double.TryParse(item.CtValue, out double ctValue))
                         {
-                            worksheet.Cells[row, 6].Value = item.CtValue.Value;
+                            worksheet.Cells[row, 6].Value = ctValue;
                             worksheet.Cells[row, 6].Style.Numberformat.Format = "0.00";
                         }
                         else
                         {
-                            worksheet.Cells[row, 6].Value = "-";
+                            worksheet.Cells[row, 6].Value = item.CtValue; // Keep as string if not parseable (e.g., "-")
                         }
                         
                         worksheet.Cells[row, 7].Value = item.Concentration;
-                        worksheet.Cells[row, 8].Value = item.Result;
+                        worksheet.Cells[row, 8].Value = item.FinalResult;
                         
-                        // 如果是阳性结果，设置字体颜色为红色
+                        // If isPositive is true, set font color to red
                         if (item.IsPositive)
                         {
                             worksheet.Cells[row, 8].Style.Font.Color.SetColor(System.Drawing.Color.Red);
@@ -852,7 +1005,41 @@ namespace MolePCRConvert4WPF.App.ViewModels
 
         private bool IsPositiveResult(string? result)
         {
+            // Keep this logic based on the result string (which now comes from DetectionResult)
             return !string.IsNullOrEmpty(result) && result.Contains("阳性");
         }
+
+        // Handle property change for ShowAllPatients to update the displayed list
+        partial void OnShowAllPatientsChanged(bool value)
+        {
+            ProcessAnalysisResults(); // Re-process results based on the new flag
+        }
+    }
+
+    // Ensure PCRResultItem has necessary properties if adding separators etc.
+    public partial class PCRResultItem : ObservableObject // Assuming PCRResultItem is defined like this
+    {
+        [ObservableProperty]
+        public string? patientName;
+        [ObservableProperty]
+        public string? patientCaseNumber;
+        [ObservableProperty]
+        public string? wellPosition;
+        [ObservableProperty]
+        public string? channel;
+        [ObservableProperty]
+        public string? targetName;
+        [ObservableProperty]
+        public string? ctValue;
+        [ObservableProperty]
+        public string? concentration;
+        [ObservableProperty]
+        public string? finalResult;
+        [ObservableProperty]
+        public bool isPositive; // For row highlighting
+
+        // Added property for visual separation / grouping
+        [ObservableProperty]
+        public bool isFirstPatientRow;
     }
 } 

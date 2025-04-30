@@ -1,4 +1,5 @@
-using MolePCRConvert4WPF.Core.Models;
+// using MolePCRConvert4WPF.Core.Models; // Removed or commented out
+using MolePCRConvert4WPF.App.ViewModels; // Use the ViewModels namespace
 using System.Windows.Media;
 
 namespace MolePCRConvert4WPF.App.Extensions
@@ -11,9 +12,9 @@ namespace MolePCRConvert4WPF.App.Extensions
         /// <summary>
         /// 获取结果文本颜色
         /// </summary>
-        /// <param name="item">PCR结果项</param>
+        /// <param name="item">PCR结果项 (ViewModel version)</param>
         /// <returns>文本颜色</returns>
-        public static Brush GetResultForeground(this PCRResultItem item)
+        public static Brush GetResultForeground(this ViewModels.PCRResultItem item)
         {
             return item.IsPositive ? Brushes.Red : Brushes.Black;
         }

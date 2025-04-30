@@ -16,6 +16,7 @@
             </MenuItem>
             <MenuItem Header="工具">
                 <MenuItem Header="模板修复工具" Click="MenuTemplateFixTool_Click" />
+                <MenuItem Header="自定义报告设计器" Click="MenuReportDesigner_Click" />
             </MenuItem>
             <MenuItem Header="帮助">
                 <MenuItem Header="关于" />

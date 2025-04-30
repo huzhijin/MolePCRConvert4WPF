@@ -270,7 +270,7 @@ namespace MolePCRConvert4WPF.App
                 new PanelRuleRepository(_panelRulesFilePath));
             services.AddTransient<ISampleNamingService, SampleNamingService>();
             services.AddTransient<IReportService, ExcelReportGenerator>();
-            services.AddTransient<IReportTemplateDesignerService, ReoGridReportTemplateDesignerService>();
+            services.AddTransient<MolePCRConvert4WPF.Core.Interfaces.IReportTemplateDesignerService, MolePCRConvert4WPF.Infrastructure.Services.ReoGridReportTemplateDesignerService>();
             services.AddTransient<IFileHandler, ExcelFileHandler>();
 
             // 注册视图模型

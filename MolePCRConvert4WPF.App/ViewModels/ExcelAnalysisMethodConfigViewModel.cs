@@ -14,6 +14,7 @@ using System.Windows; // For MessageBox
 using MolePCRConvert4WPF.Core.Services; // <-- Add using for IAppStateService
 using System.Windows.Controls;
 using System.Windows.Media;
+using MolePCRConvert4WPF.App.Utils;
 
 namespace MolePCRConvert4WPF.App.ViewModels
 {
@@ -72,8 +73,8 @@ namespace MolePCRConvert4WPF.App.ViewModels
                     // Refresh files when path changes
                      RefreshExcelFiles();
                      // Update dependent command states
-                     (RefreshFilesCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                     (CreateNewFileCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                     RefreshFilesCommand.NotifyCanExecuteChangedIfNeeded();
+                     CreateNewFileCommand.NotifyCanExecuteChangedIfNeeded();
                 }
             }
         }
@@ -118,9 +119,9 @@ namespace MolePCRConvert4WPF.App.ViewModels
                 if(SetProperty(ref _isLoading, value))
                 {
                     // Update command states when loading changes
-                    (RefreshFilesCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                    (CreateNewFileCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                    (SaveConfigurationCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    RefreshFilesCommand.NotifyCanExecuteChangedIfNeeded();
+                    CreateNewFileCommand.NotifyCanExecuteChangedIfNeeded();
+                    SaveConfigurationCommand.NotifyCanExecuteChangedIfNeeded();
                 }
             }
         }
@@ -505,7 +506,7 @@ namespace MolePCRConvert4WPF.App.ViewModels
             finally
             {
                 IsLoading = false;
-                (SaveConfigurationCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                SaveConfigurationCommand.NotifyCanExecuteChangedIfNeeded();
             }
         }
 
@@ -636,6 +637,12 @@ namespace MolePCRConvert4WPF.App.ViewModels
             {
                 IsLoading = false;
             }
+
+            // 更新命令状态
+            SaveConfigurationCommand.NotifyCanExecuteChangedIfNeeded();
+            
+            // 提示保存成功
+            MessageBox.Show("配置保存成功！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ImportFile()

@@ -146,7 +146,13 @@
                                         </Style>
                                     </Border.Style>
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock x:Name="WellNameText" Text="{Binding WellName}" FontSize="12" TextAlignment="Center" FontWeight="Bold">
+                                        <TextBlock x:Name="WellNameText" FontSize="12" TextAlignment="Center" FontWeight="Bold">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0}{1}">
+                                                    <Binding Path="Row"/>
+                                                    <Binding Path="Column"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                      <Setter Property="Foreground" Value="Black"/>

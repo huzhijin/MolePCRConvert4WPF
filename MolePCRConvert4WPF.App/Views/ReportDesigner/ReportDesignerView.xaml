@@ -1,0 +1,171 @@
+<Window x:Class="MolePCRConvert4WPF.Views.ReportDesigner.ReportDesignerView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MolePCRConvert4WPF.Views.ReportDesigner"
+        xmlns:viewmodels="clr-namespace:MolePCRConvert4WPF.App.ViewModels"
+        xmlns:reoGrid="clr-namespace:unvell.ReoGrid;assembly=unvell.ReoGrid"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" Height="700" Width="1000"
+        WindowStartupLocation="CenterOwner">
+    
+    <Window.Resources>
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        
+        <Style x:Key="VariableCategoryStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,8,0,2"/>
+        </Style>
+        
+        <Style x:Key="VariableItemStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="10,2,0,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- 顶部工具栏 -->
+        <ToolBar DockPanel.Dock="Top" Background="#F5F5F5">
+            <Button Style="{StaticResource ToolbarButtonStyle}" Command="{Binding NewTemplateCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="新建" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource ToolbarButtonStyle}" Command="{Binding OpenTemplateCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="打开" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource ToolbarButtonStyle}" Command="{Binding SaveTemplateCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="保存" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource ToolbarButtonStyle}" Command="{Binding SaveAsTemplateCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="另存为" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <Button Click="MergeCells_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="合并单元格">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="合并单元格" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="UnmergeCells_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="取消合并">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="取消合并" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <Button Click="AlignLeft_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="左对齐">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="左" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="AlignCenter_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="居中对齐">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="中" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="AlignRight_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="右对齐">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="右" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <Button Click="AddBorders_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="添加边框">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="边框" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <Button Click="InsertImage_Click" Style="{StaticResource ToolbarButtonStyle}" ToolTip="插入图片">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="插入图片" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <Button Style="{StaticResource ToolbarButtonStyle}" Command="{Binding InsertDataTableCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="插入数据表" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Separator/>
+            <Button Style="{StaticResource ToolbarButtonStyle}" Command="{Binding PreviewReportCommand}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="预览报告" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </ToolBar>
+        
+        <!-- 左侧变量面板 -->
+        <Grid DockPanel.Dock="Left" Width="250" Background="#F0F0F0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <TextBlock Grid.Row="0" Text="可用变量" FontWeight="Bold" Margin="10,10,0,5" FontSize="14"/>
+            
+            <ScrollViewer Grid.Row="1" Margin="5" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding AvailableVariables}">
+                    <ItemsControl.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding CategoryName}" Style="{StaticResource VariableCategoryStyle}"/>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ItemsControl.GroupStyle>
+                    
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ToolTip="{Binding Description}" Margin="0,2">
+                                <TextBlock Text="{Binding DisplayName}" Style="{StaticResource VariableItemStyle}"/>
+                                <Rectangle Fill="Transparent" Cursor="Hand">
+                                    <Rectangle.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.InsertVariableCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}"/>
+                                    </Rectangle.InputBindings>
+                                </Rectangle>
+                                <!-- 支持拖放 -->
+                                <Rectangle Fill="Transparent" 
+                                           MouseMove="Variable_MouseMove" 
+                                           Tag="{Binding}"
+                                           ToolTip="拖动到单元格插入变量">
+                                </Rectangle>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+        
+        <!-- 主编辑区 - 使用ReoGrid替代DataGrid -->
+        <Grid>
+            <reoGrid:ReoGridControl x:Name="ReportGrid" Margin="5"
+                                   AllowDrop="True" 
+                                   DragEnter="ReportGrid_DragEnter"
+                                   DragOver="ReportGrid_DragOver"
+                                   Drop="ReportGrid_Drop"/>
+            
+            <!-- 表格操作菜单 -->
+            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,10,10">
+                <Button Content="添加列" Padding="8,3" Margin="5,0" Click="AddColumn_Click"/>
+                <Button Content="添加行" Padding="8,3" Margin="5,0" Click="AddRow_Click"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window> 
